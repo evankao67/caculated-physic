@@ -7,14 +7,13 @@
 #include <cstdlib>
 #include <ctime>
 #include <queue>
-#define maprange 100
-#define node 100
+#define maprange 10
+#define node 10
 using namespace std;
 bool check[maprange][maprange];
 int table[node][node];
 int dist[node][node];
 int annealing_dist[node][node];
-bool visit[node];
 vector<int> adj[node];
 map<int, int> times;
 int counter = 0;
@@ -189,38 +188,39 @@ void heap(int s)
         counter++;
     }
 }
-queue<int> q;
-void Annealing(int index)
+bool visit[node];
+int Energy = 0, Temparature = 100 * 10;
+int best_case = INT_MAX;
+void Dfs(int index, int destination)
 {
-    while(!q.empty())
-        q.pop();
-    int Temperature = node * 2 -10; // initial T
-    bool Check_All_Visited = 0;
-        srand(time(NULL));
-        visit[index] = 1;
-        q.push(index);
-        while (!q.empty()&&Temperature)
+    while(Temparature==0)
+        return;
+    visit[index] = 1;
+    if (index == destination)//Iteration
+    {
+        best_case = min(best_case, Energy);
+        Temparature--;
+        //cout<<index<<endl;
+        return;
+    }
+    for(int i=adj[index].size()-1;i>=0;i--)
+    {
+        if(!visit[adj[index][i]])
         {
-            int top = q.front();
-            while (!adj[top].empty()&&Temperature)
-            {
-                //cerr<<"evan"<<endl;
-                int random_choose = rand() % adj[top].size();
-                if (!visit[adj[top][random_choose]])
-                {
-                    visit[adj[top][random_choose]] = 1;
-                    q.push(adj[top][random_choose]);
-                    annealing_dist[index][adj[top][random_choose]] = min(annealing_dist[index][adj[top][random_choose]], table[index][adj[top][random_choose]]+table[top][adj[top][random_choose]]);
-                    //cout<<annealing_dist[top][adj[top][random_choose]]<<endl;
-                        swap(adj[top][adj[top].size() - 1], adj[top][random_choose]);
-                }
-                adj[top].pop_back();
-                Temperature--;
-            }
-            q.pop();
+            Energy+=table[index][adj[index][i]];
+            Dfs(adj[index][i], destination);
+            visit[adj[index][i]]=0;
+            Energy-=table[index][adj[index][i]];
         }
-    
+    }
+    return;
 }
+int Annealing(int from, int to)
+{
+    Dfs(from, to);
+    return best_case;
+}
+
 int main()
 {
     for (int i = 0; i < node; i++)
@@ -370,26 +370,14 @@ int main()
     for (int i = 0; i < 100; i++)
         for (int j = 0; j < node; j++)
             Sum += dist[i][j];
-    // End of Implementation of Array
-    // cout<<Sum/(node*(node-1))<<endl;
-    // Implement Dijkstra with Binary Heap
-    Begin = clock();
-    for (int i = 0; i < node; i++)
-    {
-        for(int j=0;j<node;j++)
-            visit[j]=0;
-         Annealing(i);
-    }
-       
-    End = clock();
-    duration = double(End - Begin) / CLOCKS_PER_SEC;
-    cout << "Annealing:" << endl;
-    cout << fixed << setprecision(6) << duration << endl;
+   
     cout << "input from and end : " << endl;
-    int from , to;
-    cin>>from>>to;
-    cout<<"Dijkstra :"<<endl<<search(from , to)<<endl;
-    cout<<"Annealing :"<<endl<<search1(from , to)<<endl;
+    int from, to;
+    cin >> from >> to;
+    cout << "Dijkstra :" << endl
+         << search(from, to) << endl;
+    cout << "Annealing :" << endl
+         << Annealing(from, to) << endl;
     /*for (int i = 0; i < 30; i++)
      {
          for (int j = 0; j < 30; j++)
@@ -419,4 +407,3 @@ int main()
 
     return success ? 0 : 1;
 }
-
